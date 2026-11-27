@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MIRA 2.0 - AEPLAN / PMSE</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+  
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="app">
+    <div v-if="loading" class="loading-overlay">
+      <div class="spinner-border text-primary mb-2" style="width: 3rem; height: 3rem;"></div>
+      <div class="text-muted fw-bold">Processando...</div>
+    </div>
+
+    <view-login v-if="!isLoggedIn" @sucesso-login="handleLogin"></view-login>
+
+    <div v-else class="main-container">
+      <div class="sidebar-backdrop" :class="{ 'show': mobileMenu.isOpen }" @click="mobileMenu.close()"></div>
+
+      <div class="sidebar-wrapper" :class="{ 'mobile-open': mobileMenu.isOpen }">
+        <app-sidebar :current-view="currentView" :user-perfil="user.perfil" @navigate="navegar"></app-sidebar>
+      </div>
+
+      <main class="content-area">
+        <header class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3 bg-white p-3 rounded shadow-sm sticky-top" style="z-index: 1020;">
+          <div class="d-flex align-items-center">
+            <button class="btn btn-light border me-3 d-md-none" @click="mobileMenu.toggle()">
+              <i class="bi bi-list fs-4"></i>
+            </button>
+            <h4 class="text-primary m-0 fw-bold text-truncate">
+              <i class="bi bi-layers-half me-2 d-none d-md-inline"></i>{{ tituloPagina }}
+            </h4>
+          </div>
+
+          <div class="dropdown">
+            <div class="d-flex align-items-center cursor-pointer" data-bs-toggle="dropdown">
+              <div class="text-end me-2 lh-1 d-none d-sm-block">
+                <div class="fw-bold text-dark">{{ user.nome }}</div>
+                <small class="text-muted">Mat: {{ user.matricula }} • {{ user.perfil }}</small>
+              </div>
+              <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 38px; height: 38px;">
+                <i class="bi bi-person-fill fs-5"></i>
+              </div>
+            </div>
+            <ul class="dropdown-menu dropdown-menu-end shadow-sm mt-2 border-0">
+              <li><h6 class="dropdown-header">{{ user.nome }}</h6></li>
+              <li><hr class="dropdown-divider"></li>
+              <li><a class="dropdown-item" href="#" @click.prevent="abrirMeuPerfil"><i class="bi bi-person-gear me-2 text-primary"></i>Meu Perfil</a></li>
+              <li><a class="dropdown-item text-danger" href="#" @click.prevent="logout"><i class="bi bi-box-arrow-right me-2"></i>Sair</a></li>
+            </ul>
+          </div>
+        </header>
+
+        <div class="container-fluid p-0 pb-5">
+          <component :is="currentView"></component>
+        </div>
+      </main>
+    </div>
+
+    <!-- MODAL MEU PERFIL -->
+    <div class="modal fade" id="modalMeuPerfil" tabindex="-1" data-bs-backdrop="static">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+          <div class="modal-header bg-primary text-white">
+            <h5 class="modal-title fw-bold"><i class="bi bi-person-lines-fill me-2"></i>Meu Perfil</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body p-4">
+            <form @submit.prevent="salvarMeuPerfil">
+              <div class="mb-3">
+                <label class="form-label small fw-bold text-muted">E-mail de Notificação</label>
+                <input v-model="perfilForm.email" type="email" class="form-control">
+              </div>
+              <div class="mb-3">
+                <label class="form-label small fw-bold text-muted">Telefone / WhatsApp</label>
+                <input v-model="perfilForm.telefone" type="text" class="form-control">
+              </div>
+              <div class="card bg-light border-0 p-3">
+                <h6 class="small fw-bold mb-2">Alterar Senha (opcional)</h6>
+                <input v-model="perfilForm.novaSenha" type="password" class="form-control form-control-sm mb-2" placeholder="Nova Senha">
+                <input v-model="perfilForm.confirmacao" type="password" class="form-control form-control-sm" placeholder="Confirme a Nova Senha">
+                <small v-if="erroSenhaPerfil" class="text-danger mt-1 d-block">{{ erroSenhaPerfil }}</small>
+              </div>
+              <div class="d-flex justify-content-end gap-2 mt-4">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" class="btn btn-primary fw-bold px-4">Salvar</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CDNs -->
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+  <!-- NÚCLEO -->
+  <script src="js/config.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/components/Sidebar.js"></script>
+  <script src="js/views/LoginView.js"></script>
+  <script src="js/views/HomeView.js"></script>
+
+<script src="js/views/IniciativaFormView.js"></script>
+<script src="js/views/IniciativasView.js"></script>
+<script src="js/views/IniciativaFormView.js"></script>
+<script src="js/views/IniciativasView.js"></script>
+<script src="js/views/FppView.js"></script>
+<script src="js/views/PortfolioView.js"></script>
+<script src="js/views/ProgramasView.js"></script>
+<script src="js/views/ResumoView.js"></script>
+<script src="js/views/AdminView.js"></script>
+
+  <script>
+    const { createApp, ref, reactive, computed, provide, onMounted } = Vue;
+
+    // Placeholder temporário para telas que ainda vamos montar nos próximos passos
+    const EmConstrucaoView = (titulo) => ({
+      template: `<div class="alert alert-info shadow-sm"><strong>${titulo}</strong>: pronto para conectar aos endpoints do Backend_Mira.</div>`
+    });
+
+    const App = {
+      setup() {
+        const loading = ref(false);
+        const isLoggedIn = ref(false);
+        const currentView = ref('view-home');
+
+        const user = reactive({ matricula: '', nome: '', perfil: '', email: '', telefone: '', lotacao: '' });
+        const initialData = reactive({ municipios: [], estrategia: [], setores: [], naturezas: [], beneficiarios: [], usuarios: [] });
+
+        const mobileMenu = reactive({
+          isOpen: false,
+          toggle: () => { mobileMenu.isOpen = !mobileMenu.isOpen; },
+          close: () => { mobileMenu.isOpen = false; }
+        });
+
+        const api = async (action, dados) => window.MiraAPI.call(action, dados);
+
+        provide('api', api);
+        provide('setGlobalLoading', (v) => loading.value = v);
+        provide('user', user);
+        provide('initialData', initialData);
+        provide('mobileMenu', mobileMenu);
+
+        const titulos = {
+          'view-home': 'Dashboard Inicial',
+          'view-resumo': 'DashResumo',
+          'view-proposta': 'Nova Proposta de Iniciativa',
+          'view-avaliacao': 'Avaliação de Iniciativas',
+          'view-gerencia': 'Gerenciamento de Iniciativas',
+          'view-monitor': 'Monitoramento de Iniciativas',
+          'view-fpp': 'Formulário FPP (Fundo a Fundo SSP)',
+          'view-portfolio': 'Portfólio de Compras',
+          'view-programas': 'Programas Continuados',
+          'view-admin': 'Administração e Cadastros Mestres'
+        };
+        const tituloPagina = computed(() => titulos[currentView.value] || 'MIRA 2.0');
+
+        const loadInitialData = async () => {
+          try {
+            const res = await api('carregarDadosIniciais', { matricula: user.matricula });
+            if (res.success) Object.assign(initialData, res);
+          } catch (e) { console.error('Erro carga inicial:', e); }
+        };
+
+        const handleLogin = (dadosUsuario) => {
+          Object.assign(user, dadosUsuario);
+          window.MiraAPI.salvarSessao(dadosUsuario);
+          isLoggedIn.value = true;
+          currentView.value = 'view-home';
+          loadInitialData();
+        };
+
+        const logout = () => {
+          if (!confirm('Deseja realmente sair do sistema?')) return;
+          window.MiraAPI.limparSessao();
+          Object.assign(user, { matricula: '', nome: '', perfil: '', email: '', telefone: '', lotacao: '' });
+          isLoggedIn.value = false;
+          mobileMenu.close();
+        };
+
+        const navegar = (view) => {
+          window.scrollTo(0, 0);
+          currentView.value = view;
+          mobileMenu.close();
+        };
+        provide('navegar', navegar);
+
+        // Meu Perfil
+        const perfilForm = reactive({ email: '', telefone: '', novaSenha: '', confirmacao: '' });
+        const erroSenhaPerfil = ref('');
+
+        const abrirMeuPerfil = () => {
+          erroSenhaPerfil.value = '';
+          perfilForm.email = user.email || '';
+          perfilForm.telefone = user.telefone || '';
+          perfilForm.novaSenha = '';
+          perfilForm.confirmacao = '';
+          bootstrap.Modal.getOrCreateInstance(document.getElementById('modalMeuPerfil')).show();
+        };
+
+        const salvarMeuPerfil = async () => {
+          if (perfilForm.novaSenha && perfilForm.novaSenha !== perfilForm.confirmacao) {
+            erroSenhaPerfil.value = 'As senhas não conferem.';
+            return;
+          }
+          loading.value = true;
+          try {
+            const res = await api('atualizarMeuPerfil', {
+              matricula: user.matricula,
+              email: perfilForm.email,
+              telefone: perfilForm.telefone,
+              novaSenha: perfilForm.novaSenha
+            });
+            if (res.success && res.user) {
+              Object.assign(user, res.user);
+              window.MiraAPI.salvarSessao(res.user);
+              bootstrap.Modal.getInstance(document.getElementById('modalMeuPerfil'))?.hide();
+              alert('Perfil atualizado com sucesso!');
+            } else {
+              alert(res.message || 'Erro ao atualizar.');
+            }
+          } catch (e) {
+            alert(e.message);
+          } finally {
+            loading.value = false;
+          }
+        };
+
+        // Restaura sessão se der F5
+        onMounted(() => {
+          const saved = window.MiraAPI.obterSessao();
+          if (saved && saved.matricula) {
+            handleLogin(saved);
+          }
+        });
+
+        return {
+          loading, isLoggedIn, currentView, user, mobileMenu,
+          tituloPagina, handleLogin, logout, navegar,
+          perfilForm, erroSenhaPerfil, abrirMeuPerfil, salvarMeuPerfil
+        };
+      }
+    };
+
+    const app = createApp(App);
+    app.component('view-login', window.MiraViews.LoginView);
+    app.component('app-sidebar', window.MiraComponents.Sidebar);
+    app.component('view-home', window.MiraViews.HomeView);
+
+    // Views seguintes (substituiremos pelos arquivos reais em js/views/)
+    app.component('view-resumo', EmConstrucaoView('DashResumo'));
+    app.component('view-proposta', EmConstrucaoView('Nova Proposta'));
+    app.component('view-avaliacao', EmConstrucaoView('Avaliação de Iniciativas'));
+    app.component('view-gerencia', EmConstrucaoView('Gerência de Iniciativas'));
+    app.component('view-monitor', EmConstrucaoView('Monitoramento de Iniciativas'));
+    app.component('view-fpp', EmConstrucaoView('Formulário FPP SSP'));
+    app.component('view-portfolio', EmConstrucaoView('Portfólio de Compras'));
+    app.component('view-programas', EmConstrucaoView('Programas Continuados'));
+    app.component('view-admin', EmConstrucaoView('Administração e Mestres'));
+    app.component('view-proposta', window.MiraViews.IniciativaFormView);
+    app.component('view-avaliacao', window.MiraViews.AvaliacaoView);
+    app.component('view-gerencia', window.MiraViews.GerenciaView);
+    app.component('view-monitor', window.MiraViews.MonitorView);
+    app.component('view-resumo', window.MiraViews.ResumoView);
+    app.component('view-proposta', window.MiraViews.IniciativaFormView);
+    app.component('view-avaliacao', window.MiraViews.AvaliacaoView);
+    app.component('view-gerencia', window.MiraViews.GerenciaView);
+    app.component('view-monitor', window.MiraViews.MonitorView);
+    app.component('view-fpp', window.MiraViews.FppView);
+    app.component('view-portfolio', window.MiraViews.PortfolioView);
+    app.component('view-programas', window.MiraViews.ProgramasView);
+    app.component('view-admin', window.MiraViews.AdminView);
+
+    app.mount('#app');
+  </script>
+</body>
+</html>
